@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata below."
+type: software
+title: "HAMCOR: Hamiltonian-based AGN Multi-constraint CORonal inference framework"
+authors:
+  - family-names: Buffoli
+    given-names: Fabio
+    email: f.buffoli008@unibs.it
+    affiliation: "Università degli Studi di Brescia"
+version: "1.0.0"
+date-released: "2026-07-13"
+url: "https://github.com/fbuffoli95/HAMCOR"
+license: CC-BY-4.0
+preferred-citation:
+  type: article
+  authors:
+    - family-names: Buffoli
+      given-names: Fabio
+  title: "HAMCOR: A physics-driven Hamiltonian framework for inferring AGN coronal geometry from X-ray reverberation lags"
+  year: 2026
+  journal: "arXiv e-prints"
+  doi: "10.48550/arXiv.2607.11805"
+  url: "https://arxiv.org/abs/2607.11805"
