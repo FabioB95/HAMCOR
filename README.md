@@ -92,7 +92,7 @@ python run_mrk335_multiepoch.py
 
 ```
 HAMCOR/
-├── qcorona/                    # Core library
+├── corona/                     # Core library
 │   ├── geometry/               # Grid construction
 │   ├── hamiltonian/            # H terms + assembly
 │   ├── physics/                # Lags, illumination, compactness
@@ -152,7 +152,7 @@ Mrk 335 multi-epoch: coronal centroid stable at (R_c, z_c) ≈ (6.3, 0.5) r_g ac
 
 ## Contact
 
-Fabio Buffoli — f.buffoli008@unibs.it  
+Fabio Buffoli — fabio.buffoli@unibs.it  
 Università degli Studi di Brescia, Italy
 
 ---
