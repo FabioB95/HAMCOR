@@ -2,10 +2,11 @@
 """
 run_iras13224.py — Applica QCORONA a IRAS 13224 (XMM‑Newton ObsID 0780560101, 2016)
 
-Lag misurato: -16.9 ± 10.5 s = 2.28 ± 1.41 r_g/c
+Lag scalare (Fabian+2012b, per riferimento storico): -16.9 ± 10.5 s = 2.28 ± 1.41 r_g/c
+Target reale del fit: spettro lag-energia Kara+2013 Fig.6 (low-flux), multi-banda.
 Massa BH: ~1.5×10⁶ M☉ (NLS1)
-Inclinazione: ~45° (tipica per AGN con riflessione)
-L_X: 1×10⁴³ erg/s (tipica per questo NLS1)
+Inclinazione: ~45°
+L_X: 1×10⁴³ erg/s
 R_obs: 3.0 (forte riflessione, soft excess)
 """
 
@@ -23,6 +24,8 @@ from qcorona.optimization.classical import QCORONAOptimizer, OptimizationConfig
 from qcorona.hamiltonian.terms import vertical_orientations
 from qcorona.physics.illumination import compute_solid_angles
 from qcorona.physics.lags import compute_lag_matrix, compute_transfer_function_full
+from schwarzschild_lags import compute_lag_matrix_schwarzschild
+from lag_energy_psi import build_psi_obs_from_scalar_lags
 
 import matplotlib
 matplotlib.use('Agg')
@@ -45,15 +48,15 @@ plt.rcParams.update({
 })
 
 # ── parametri IRAS 13224 ─────────────────────────────────────────────────────
-M_BH       = 1.5e6      # M_sun (NLS1)
-R_G_C      = 7.4        # s per r_g/c (GM/c^3)
-LAG_OBS_S  = 16.9       # s (valore assoluto)
-LAG_ERR_S  = 10.5       # s
-LAG_OBS_RG = LAG_OBS_S / R_G_C    # 2.28 r_g/c
-LAG_ERR_RG = LAG_ERR_S / R_G_C    # 1.41 r_g/c
-R_OBS      = 3.0        # alta reflection fraction (soft excess)
-L_X        = 1.0e43     # erg/s
-INCL       = 45.0       # gradi
+M_BH       = 1.5e6
+R_G_C      = 7.4
+LAG_OBS_S  = 16.9       # Fabian+2012b (riferimento storico, NON target del fit)
+LAG_ERR_S  = 10.5
+LAG_OBS_RG = LAG_OBS_S / R_G_C
+LAG_ERR_RG = LAG_ERR_S / R_G_C
+R_OBS      = 3.0
+L_X        = 1.0e43
+INCL       = 45.0
 
 N_STARTS   = 5
 MAX_ITER   = 2000
@@ -64,11 +67,12 @@ print("QCORONA — IRAS 13224 (XMM ObsID 0780560101, 2016)")
 print("=" * 60)
 print(f"  M_bh    = {M_BH:.1e} M_sun")
 print(f"  r_g/c   = {R_G_C:.0f} s")
-print(f"  Lag obs = {LAG_OBS_S:.1f} +/- {LAG_ERR_S:.1f} s "
+print(f"  Lag Fabian+2012b (riferimento): {LAG_OBS_S:.1f} +/- {LAG_ERR_S:.1f} s "
       f"= {LAG_OBS_RG:.2f} +/- {LAG_ERR_RG:.2f} r_g/c")
 print(f"  R_obs   = {R_OBS}")
 print(f"  L_X     = {L_X:.1e} erg/s")
 print(f"  Incl    = {INCL} deg")
+print(f"  Target fit: psi_obs multi-energia Kara+2013 Fig.6 (low-flux)")
 
 # ── grids ─────────────────────────────────────────────────────────────────────
 print("\nBuilding grids...")
@@ -79,30 +83,55 @@ DISK = build_disk_grid(n_r=30, n_phi=18)
 print(f"  Corona: {GRID.n_cells} cells  |  Disk: {DISK.n_elements} elements")
 
 SA = compute_solid_angles(GRID, DISK)
-LM = compute_lag_matrix(GRID, DISK, observer_inclination=INCL)
+LM = compute_lag_matrix_schwarzschild(GRID, DISK, observer_inclination=INCL)
 print(f"  Lag matrix range: {LM.min():.2f} -- {LM.max():.2f} r_g/c")
-print(f"  Lag obs {LAG_OBS_RG:.2f} in range: {LM.min() < LAG_OBS_RG < LM.max()}")
 
-# ── psi_obs gaussiana centrata sul lag misurato ───────────────────────────────
-T_MIN  = max(0.0, float(LM.min()))
-T_MAX  = 15.0
-t_bins = np.linspace(T_MIN, T_MAX, N_BINS_TF + 1)
-t_c    = 0.5 * (t_bins[:-1] + t_bins[1:])
+# ── psi_obs multi-energia da spettro lag-energia (Kara+2013, Fig.6, low-flux) ─
+_KARA2013_LOWFLUX_LAG_S = [
+    # (E_center_keV, lag_s, lag_err_s)
+    (0.349,  -46.5,  17.8),
+    (0.451,  -15.4,  19.2),
+    (0.600,   35.5,  17.9),
+    (0.799,  -12.0,  20.6),
+    (1.000,   -1.5,  30.6),
+    (1.300, -112.2,  26.4),
+    (1.753, -139.3,  38.5),
+    (2.502, -189.6,  50.0),
+    (3.504, -332.1,  83.4),
+    (4.506, -195.7,  59.9),
+    (5.500,  -66.1,  70.6),
+    (7.006,  -33.4,  84.9),
+    (9.003, -541.9,  84.9),
+]
 
-psi_obs = np.exp(-0.5 * ((t_c - LAG_OBS_RG) / LAG_ERR_RG) ** 2)
-psi_obs = psi_obs / psi_obs.sum()
+lags_list  = [(lag_s / R_G_C, err_s / R_G_C, 1.0 / (err_s / R_G_C)**2)
+              for (_, lag_s, err_s) in _KARA2013_LOWFLUX_LAG_S]
+label_list = [f'{E:.2f} keV' for (E, _, _) in _KARA2013_LOWFLUX_LAG_S]
 
-print(f"\n  psi_obs: Gaussian at {LAG_OBS_RG:.2f} r_g/c "
-      f"(sigma={LAG_ERR_RG:.2f} r_g/c)")
-print(f"  t range: [{T_MIN:.1f}, {T_MAX:.1f}] r_g/c, {N_BINS_TF} bins")
+psi_obs, t_bins = build_psi_obs_from_scalar_lags(
+    lags_list, label_list, n_bins=N_BINS_TF,
+    t_min=0.0, t_max=90.0,
+)
+t_c = 0.5 * (t_bins[:-1] + t_bins[1:])
+
+# target di riferimento per i print (media pesata |lag| Kara+2013)
+_kara_weights = [1.0 / (err_s / R_G_C)**2 for (_, _, err_s) in _KARA2013_LOWFLUX_LAG_S]
+_kara_lags_rg = [abs(lag_s) / R_G_C for (_, lag_s, _) in _KARA2013_LOWFLUX_LAG_S]
+kara_weighted_mean_rg = sum(l * w for l, w in zip(_kara_lags_rg, _kara_weights)) / sum(_kara_weights)
+
+print(f"\n  psi_obs: multi-energia da Kara+2013 Fig.6 (low-flux, 13 bande)")
+print(f"  t range: [{t_bins[0]:.1f}, {t_bins[-1]:.1f}] r_g/c, {N_BINS_TF} bins")
+print(f"  picco psi_obs a: {t_c[psi_obs.argmax()]:.2f} r_g/c")
+print(f"  Kara+2013 |lag| medio pesato: {kara_weighted_mean_rg:.2f} r_g/c "
+      f"(target di riferimento; NON e' Fabian+2012b = {LAG_OBS_RG:.2f})")
 
 # ── constraints ───────────────────────────────────────────────────────────────
 constraints = ObservationalConstraints(
-    delta_t_obs          = LAG_OBS_RG,
+    delta_t_obs          = LAG_OBS_RG,   # tenuto per compatibilita'; il vincolo e' psi_obs
     R_obs                = R_OBS,
     L_X                  = L_X,
     M_bh                 = M_BH,
-    eddington_ratio      = 0.5,    # NLS1 tipicamente alta Eddington
+    eddington_ratio      = 0.5,
     observer_inclination = INCL,
     source_name          = "IRAS13224_XMM2016",
     psi_obs              = psi_obs,
@@ -117,7 +146,7 @@ h_config = HamiltonianConfig(
     use_energy_barrier=False,
 )
 
-H_obj = QCORONAHamiltonian(GRID, DISK, constraints, h_config)
+H_obj = QCORONAHamiltonian(GRID, DISK, constraints, h_config, lag_matrix=LM)
 
 # ── multi-start optimization ──────────────────────────────────────────────────
 print(f"\nOptimizing ({N_STARTS} cold starts, {MAX_ITER} iter each)...")
@@ -161,9 +190,9 @@ d_best   = best.final_H.diagnostics
 print(f"\nBest result (seed {best_idx}):")
 print(f"  H_total    = {best.final_H.H_total:.4f}")
 print(f"  lag_pred   = {d_best['delta_t_pred']:.2f} r_g/c  "
-      f"(obs: {LAG_OBS_RG:.2f} +/- {LAG_ERR_RG:.2f})")
-print(f"  lag_pred_s = {d_best['delta_t_pred']*R_G_C:.1f} s  "
-      f"(obs: {LAG_OBS_S:.1f} +/- {LAG_ERR_S:.1f} s)")
+      f"(target Kara+2013 pesato: {kara_weighted_mean_rg:.2f} r_g/c — "
+      f"NOTA: diverso dal lag Fabian+2012b = {LAG_OBS_RG:.2f}, sono misure distinte)")
+print(f"  lag_pred_s = {d_best['delta_t_pred']*R_G_C:.1f} s")
 print(f"  illum_pred = {d_best['I_pred']:.3f}  "
       f"(obs: {constraints.I_obs:.3f})")
 
@@ -192,7 +221,6 @@ gs  = gridspec.GridSpec(
     wspace=0.48,
 )
 
-# col 0: convergenza
 ax0 = fig.add_subplot(gs[0, 0])
 for i, res in enumerate(all_results):
     H_arr = np.array([h['H_total'] for h in res.history])
@@ -205,7 +233,6 @@ ax0.set_ylabel(r'$|\mathcal{H}|$')
 ax0.set_title('Convergence')
 ax0.tick_params(labelsize=7)
 
-# col 1: mappa R-z
 ax1 = fig.add_subplot(gs[0, 1])
 mmap = rz_map(w_best)
 im   = ax1.pcolormesh(R_c, z_c, mmap.T,
@@ -220,11 +247,10 @@ cb.ax.yaxis.set_major_locator(MaxNLocator(3))
 ax1.tick_params(labelsize=7)
 ax1.text(0.05, 0.95,
          f'lag = {d_best["delta_t_pred"]:.2f} $r_g/c$\n'
-         f'obs: {LAG_OBS_RG:.2f} $r_g/c$',
+         f'Kara wtd: {kara_weighted_mean_rg:.2f} $r_g/c$',
          transform=ax1.transAxes, va='top', fontsize=7,
          bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85))
 
-# col 2: psi_obs vs psi_pred
 ax2 = fig.add_subplot(gs[0, 2])
 ax2.fill_between(t_c, psi_obs, alpha=0.18, color='#d6604d')
 ax2.plot(t_c, psi_obs,     color='#d6604d', lw=1.3,
@@ -246,8 +272,9 @@ ax2.text(0.97, 0.93, f'$\\chi^2={chi2:.2e}$',
          fontsize=6.5, color='gray')
 
 fig.suptitle(
-    'IRAS 13224 — HAMCOR fit (XMM ObsID 0780560101, 2016)',
-    fontsize=9.5, y=0.98,
+    'IRAS 13224 — HAMCOR fit (XMM ObsID 0780560101, 2016)\n'
+    r'target: Kara+2013 lag-energy spectrum (not Fabian+2012b scalar lag)',
+    fontsize=9.0, y=0.99,
 )
 
 os.makedirs('results', exist_ok=True)
@@ -284,8 +311,9 @@ print("Saved: results/fig_iras13224.tex")
 print("\n" + "=" * 60)
 print("SUMMARY — IRAS 13224 HAMCOR fit")
 print("=" * 60)
-print(f"  Lag obs:    {LAG_OBS_S:.1f} +/- {LAG_ERR_S:.1f} s "
-      f"= {LAG_OBS_RG:.2f} +/- {LAG_ERR_RG:.2f} r_g/c")
+print(f"  Target Kara+2013 |lag| pesato: {kara_weighted_mean_rg:.2f} r_g/c")
+print(f"  Fabian+2012b (riferimento storico): {LAG_OBS_RG:.2f} +/- {LAG_ERR_RG:.2f} r_g/c "
+      f"— NON e' il target del fit")
 print(f"  Lag pred:   {d_best['delta_t_pred']*R_G_C:.1f} s "
       f"= {d_best['delta_t_pred']:.2f} r_g/c")
 print(f"  Illum obs:  {constraints.I_obs:.3f}")

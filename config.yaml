@@ -1,0 +1,126 @@
+# QCORONA Configuration
+# Default hyperparameters with physical justification
+
+# =============================================================================
+# GRID DISCRETIZATION
+# =============================================================================
+grid:
+  # Radial extent in gravitational radii (r_g = GM/c^2)
+  r_in: 2.0       # Near ISCO for high spin (a ~ 0.998: r_ISCO ~ 1.24 r_g)
+  r_out: 30.0     # Outer boundary - most coronal emission within ~20 r_g
+  
+  # Vertical extent
+  z_min: 1.0      # Minimum height above disk
+  z_max: 20.0     # Maximum height - lamp-post models rarely exceed ~15 r_g
+  
+  # Resolution
+  n_r: 15         # Radial cells (logarithmic spacing)
+  n_z: 15         # Vertical cells (logarithmic spacing)
+  n_phi: 12       # Azimuthal cells (uniform spacing)
+  # Total cells: 15 × 15 × 12 = 2700
+
+# =============================================================================
+# PHYSICAL CONSTANTS
+# =============================================================================
+physics:
+  # Pair-production stability threshold
+  # From Svensson (1984), Fabian+ (2015): pair catastrophe at l ~ 10-100
+  # Conservative choice at lower end
+  l_crit: 30.0
+  
+  # Maximum coronal dissipation fraction
+  # Coronae typically dissipate 10-30% of accretion power
+  # Lusso & Risaliti (2012): decreases with Eddington ratio
+  f_max: 0.25
+  
+  # Thomson cross section (cm^2) - for compactness calculation
+  sigma_T: 6.652e-25
+  
+  # Electron mass × c^2 (erg)
+  m_e_c2: 8.187e-7
+  
+  # Gravitational radius scale (set per source)
+  # r_g = GM/c^2, for M = 10 M_sun: r_g ~ 1.5e6 cm
+  # This is set dynamically based on black hole mass
+
+# =============================================================================
+# HAMILTONIAN PENALTY WEIGHTS
+# =============================================================================
+# These are scaled so each term contributes O(1) when constraints are satisfied
+hamiltonian:
+  # Magnetic coherence coupling
+  # Normalized so H_mag ~ O(1) for fully aligned configuration
+  J: 1.0
+  
+  # Lag consistency penalty (α)
+  # Typical lag residual: Δt ~ 1-10 r_g/c
+  # α × (Δt)^2 ~ O(1) → α ~ 0.01-0.1
+  alpha: 0.1
+  
+  # Illumination/reflection penalty (β)
+  # Typical residual: ΔI ~ 0.1-0.3
+  # β × (ΔI)^2 ~ O(1) → β ~ 10-100
+  beta: 30.0
+  
+  # Pair-production barrier stiffness (γ)
+  # Should be steep to enforce hard limit
+  gamma: 100.0
+  
+  # Energy budget barrier stiffness (δ)
+  # Similar to pair barrier
+  delta: 50.0
+
+# =============================================================================
+# OPTIMIZATION SETTINGS
+# =============================================================================
+optimization:
+  # Maximum iterations for gradient descent
+  max_iter: 2000
+  
+  # Convergence tolerance on Hamiltonian change
+  tol: 1.0e-6
+  
+  # Learning rate for emissivity weights
+  lr_w: 0.01
+  
+  # Learning rate for orientation vectors
+  lr_m: 0.01
+  
+  # Continuation schedule: penalties ramp up over this many iterations
+  continuation_steps: 500
+  
+  # Multi-start: number of random initializations
+  n_starts: 10
+  
+  # Basin clustering tolerance (for geometry classification)
+  cluster_tol: 0.1
+
+# =============================================================================
+# DISK GEOMETRY
+# =============================================================================
+disk:
+  # Inner disk radius (ISCO, depends on spin)
+  r_in: 6.0       # Schwarzschild ISCO; override per source
+  
+  # Outer disk radius for illumination calculation
+  r_out: 100.0
+  
+  # Disk discretization for illumination integral
+  n_r: 50
+  n_phi: 36
+
+# =============================================================================
+# VALIDATION SETTINGS
+# =============================================================================
+validation:
+  # Tolerance for lag consistency (in r_g/c units)
+  lag_tol: 1.0
+  
+  # Tolerance for illumination consistency
+  illumination_tol: 0.1
+  
+  # Number of bootstrap samples for robustness check
+  n_bootstrap: 100
+  
+  # Perturbation scale for input observables (fractional)
+  perturb_scale: 0.1

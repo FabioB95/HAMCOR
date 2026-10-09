@@ -21,6 +21,7 @@ from qcorona.optimization.classical import QCORONAOptimizer, OptimizationConfig
 from qcorona.hamiltonian.terms import vertical_orientations
 from qcorona.physics.illumination import compute_solid_angles
 from qcorona.physics.lags import compute_lag_matrix, compute_transfer_function_full
+from schwarzschild_lags import compute_lag_matrix_schwarzschild   # <-- NUOVO
 
 import matplotlib
 matplotlib.use('Agg')
@@ -77,7 +78,7 @@ DISK = build_disk_grid(n_r=30, n_phi=18)
 print(f"  Corona: {GRID.n_cells} cells  |  Disk: {DISK.n_elements} elements")
 
 SA = compute_solid_angles(GRID, DISK)
-LM = compute_lag_matrix(GRID, DISK, observer_inclination=INCL)
+LM = compute_lag_matrix_schwarzschild(GRID, DISK, observer_inclination=INCL)  # <-- MODIFICATO (era compute_lag_matrix)
 print(f"  Lag matrix range: {LM.min():.2f} -- {LM.max():.2f} r_g/c")
 print(f"  Lag obs {LAG_OBS_RG:.2f} in range: {LM.min() < LAG_OBS_RG < LM.max()}")
 
@@ -119,7 +120,7 @@ h_config = HamiltonianConfig(
     use_energy_barrier=False,
 )
 
-H_obj = QCORONAHamiltonian(GRID, DISK, constraints, h_config)
+H_obj = QCORONAHamiltonian(GRID, DISK, constraints, h_config, lag_matrix=LM)  # <-- MODIFICATO (aggiunto lag_matrix=LM)
 
 # ── multi-start optimization ──────────────────────────────────────────────────
 print(f"\nOptimizing ({N_STARTS} cold starts, {MAX_ITER} iter each)...")
