@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hamcor"
+version = "2.0.0"
+description = "Hamiltonian inference of X-ray coronal geometry from reverberation lags with exact Schwarzschild/Kerr photon transfer"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Fabio Buffoli", email = "fabio.buffoli@unibs.it"}]
+dependencies = ["numpy>=1.24", "scipy>=1.10", "pyyaml>=6.0", "astropy>=5.3", "threadpoolctl>=3.1"]
+keywords = ["astrophysics", "X-ray", "reverberation", "AGN", "corona", "black holes", "ray tracing", "Kerr"]
+classifiers = ["Programming Language :: Python :: 3", "Topic :: Scientific/Engineering :: Astronomy",
+               "License :: OSI Approved :: MIT License"]
+
+[project.urls]
+Homepage = "https://github.com/fbuffoli95/HAMCOR"
+Paper = "https://arxiv.org/abs/2607.11805"
+
+[tool.setuptools]
+packages = ["hamcor2"]

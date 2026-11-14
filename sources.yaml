@@ -1,0 +1,173 @@
+# HAMCOR v2 — source configuration
+# Every value marked VERIFY is printed by the pipeline next to the FITS header value
+# (OBJECT, DATE-OBS) or must be confirmed against the cited paper before submission.
+
+defaults:
+  dt: 100.0                    # s, light-curve bin (AGN)
+  seg_len: 256                 # bins per segment (25.6 ks), non-overlapping
+  n_fbins: 12                  # log-spaced lag-frequency bins between f_min and f_max
+  f_max: 5.0e-3                # Hz
+  soft_band: [0.3, 1.0]        # keV
+  hard_band: [1.5, 4.0]        # keV
+  lag_energy_bins: [0.3, 0.4, 0.5, 0.6, 0.8, 1.0, 1.3, 1.6, 2.0, 2.5, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0]
+  src_radius_arcsec: 40.0
+  bkg_radius_arcsec: 50.0
+  bkg_offset_arcsec: [0.0, -180.0]   # (dRA*cos dec, dDec) from source; CHECK region file
+  flare_rate: 0.5              # ct/s, 10-12 keV PATTERN==0 (spectra always GTI-filtered)
+  gti_lightcurves: false       # light curves: background-subtracted, no GTI gaps
+  spec_range: [0.3, 10.0]      # keV for the reflection fit
+  min_counts: 25
+  spec_systematic: 0.01        # 1% calibration systematic (pn, >1e6 counts); chi2 also given stat-only
+  free_Rbr: true               # relxill emissivity break radius free in [2, 30] r_g
+  # Reflection model (XSPEC syntax): relativistic disc (relxill) + distant reflector
+  # (xillver, reflection only, logxi=0, Gamma/A_Fe tied); relxill loaded as a local model.
+  model: "TBabs*(relxill + xillver)"
+  pexrav_model: "TBabs*(pexrav + zgauss)"     # 3-10 keV cross-check
+  # Spectral fits use the spacetime of the HAMCOR forward model (Schwarzschild, a = 0,
+  # Rin = ISCO = 6 r_g = inner edge of the HAMCOR disc grid), so that I_obs = R_f/(1+R_f)
+  # is the same observable as the model illumination fraction.
+  spin: 0.0
+  spin_systematic_alt: 0.998   # refit at this spin; differences in I and D added as systematics
+  continuum_lag: true          # profiled continuum hard lag A (nu/nu0)^-a in the lag fit
+  grid: {r_in: 3.0, r_out: 30.0, z_min: 0.1, z_max: 20.0, n_r: 10, n_z: 10, n_phi: 8}   # log-spaced
+  disc: {r_in: 6.0, r_out: 100.0, n_r: 30, n_phi: 18}
+
+sources:
+
+  mrk335_2006:
+    name: "Mrk 335"
+    obsid: "0306870101"        # 2006 Jan 03, high flux
+    ra: 1.581342               # deg, NED  VERIFY
+    dec: 20.202914
+    z: 0.025785
+    nH_gal: 0.0356             # 1e22 cm^-2 (HI4PI)  VERIFY
+    M_bh: 1.3e7                # Chainakun & Young 2015 (log M = 7.1); Grier+2012: 1.42e7
+    M_bh_err: 0.37e7
+    incl: 45.0                 # Chainakun & Young 2015
+    fit_band: [2.0e-4, 7.0e-4] # Hz, reverberation band (Kara+2013)
+    model: "TBabs*(relxill + xillver + zgauss)"
+    D_emiss_sys: 0.06            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+
+  mrk335_2009:
+    name: "Mrk 335"
+    obsid: "0600540601"        # VERIFY date / flux state from header
+    ra: 1.581342
+    dec: 20.202914
+    z: 0.025785
+    nH_gal: 0.0356
+    M_bh: 1.3e7
+    M_bh_err: 0.37e7
+    incl: 45.0
+    fit_band: [2.0e-4, 7.0e-4]
+    model: "TBabs*zxipcf*(relxill + xillver + zgauss)"   # low states: partial covering (Grupe+2012; Gallo+2015)
+    D_emiss_sys: 0.005            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+
+  mrk335_2015:
+    name: "Mrk 335"
+    obsid: "0741280201"
+    ra: 1.581342
+    dec: 20.202914
+    z: 0.025785
+    nH_gal: 0.0356
+    M_bh: 1.3e7
+    M_bh_err: 0.37e7
+    incl: 45.0
+    fit_band: [2.0e-4, 7.0e-4]
+    model: "TBabs*zxipcf*(relxill + xillver + zgauss)"
+    D_emiss_sys: 0.127            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+
+  mrk335_2018:
+    name: "Mrk 335"
+    obsid: "0780500301"
+    ra: 1.581342
+    dec: 20.202914
+    z: 0.025785
+    nH_gal: 0.0356
+    M_bh: 1.3e7
+    M_bh_err: 0.37e7
+    incl: 45.0
+    fit_band: [2.0e-4, 7.0e-4]
+    model: "TBabs*zxipcf*zxipcf*(relxill + xillver + zgauss)"   # low state: two partial coverers (Gallo+2015, 2019)
+    D_emiss_sys: 0.067            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+    q1_min: 0.0                  # emissivity index allowed below 3
+
+  mrk335_2019:
+    name: "Mrk 335"
+    obsid: "0831790601"
+    ra: 1.581342
+    dec: 20.202914
+    z: 0.025785
+    nH_gal: 0.0356
+    M_bh: 1.3e7
+    M_bh_err: 0.37e7
+    incl: 45.0
+    fit_band: [2.0e-4, 7.0e-4]
+    model: "TBabs*zxipcf*zxipcf*(relxill + xillver + zgauss)"   # low state: two partial coverers (Gallo+2015, 2019)
+    D_emiss_sys: 0.026            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+    q1_min: 0.0                  # emissivity index allowed below 3
+
+  1h0707:
+    name: "1H 0707-495"
+    obsid: "0511580101"        # 2008 Jan 31
+    ra: 107.172917
+    dec: -49.551944
+    z: 0.0411
+    nH_gal: 0.0402             # VERIFY
+    M_bh: 2.0e6                # Done & Jin 2016 (2-4e6 allowed)
+    M_bh_err: 1.0e6
+    incl: 58.5                 # Zoghbi+2010 reflection fit
+    fit_band: [6.0e-4, 3.0e-3]
+    model: "TBabs*(relxillCp + xillver)"   # relxill 2.9: density (logN) is in relxillCp (Jiang+2018; Jiang+2022)
+    D_emiss_sys: 0.009            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+    free_logN: true              # log n_e free in [15, 20]
+    refl_frac_max: 100.0         # reflection-dominated NLS1 (R_f > 20 allowed)
+
+  iras13224:
+    name: "IRAS 13224-3809"
+    obsid: "0780560101"        # 2016 campaign, VERIFY
+    ra: 201.330833
+    dec: -38.414722
+    z: 0.0658
+    nH_gal: 0.0480             # VERIFY
+    M_bh: 1.9e6                # Alston+2020 (Nat. Astron. 4, 597)
+    M_bh_err: 0.2e6
+    incl: 68.0                 # Alston+2020
+    fit_band: [6.0e-4, 3.0e-3]
+    model: "TBabs*(relxillCp + xillver)"   # relxill 2.9: density (logN) is in relxillCp (Jiang+2018; Jiang+2022)
+    D_emiss_sys: 0.017            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+    free_logN: true              # log n_e free in [15, 20]
+    refl_frac_max: 100.0         # reflection-dominated NLS1 (R_f > 20 allowed)
+
+  mcg6:
+    name: "MCG-6-30-15"
+    obsid: "0029740701"        # 2001 Aug
+    ra: 203.974042
+    dec: -34.295556
+    z: 0.00775
+    nH_gal: 0.0392             # VERIFY
+    M_bh: 1.6e6                # Bentz+2016 (reverberation); submitted version used 3e6
+    M_bh_err: 0.4e6
+    incl: 33.0                 # Marinucci+2014  VERIFY
+    fit_band: [6.0e-4, 2.0e-3]   # soft lags above ~7e-4 Hz; hard (continuum) lag below
+    model: "TBabs*zxipcf*zxipcf*(relxill + xillver)"   # two warm absorbers (approximation)
+    D_emiss_sys: 0.137            # |D(broken q) - D(single q)| at a=0.998 (emissivity-model systematic)
+
+  cygx1:
+    name: "Cyg X-1"
+    obsid: "0202760101"        # VERIFY target and mode (header OBJECT/SUBMODE printed)
+    ra: 299.590316
+    dec: 35.201606
+    z: 0.0
+    nH_gal: 0.70               # total line-of-sight, left free in the fit
+    M_bh: 21.2                 # Miller-Jones+2021; submitted version used 14.8 (Orosz+2011)
+    M_bh_err: 2.2
+    incl: 27.5                 # Miller-Jones+2021
+    mode: timing               # EPIC-pn timing/burst: RAWX columns
+    rawx_halfwidth: 15
+    exclude_core_rawx: 2       # pile-up: excise +/- columns around the peak (0 = none)
+    dt: 0.01
+    seg_len: 2048              # 20.48 s
+    f_max: 30.0
+    fit_band: [1.0, 30.0]      # Hz  VERIFY against the measured lag-frequency spectrum
+    model: "TBabs*(diskbb + relxill)"
+    spec_range: [0.7, 10.0]

@@ -1,0 +1,8 @@
+numpy>=1.24
+scipy>=1.10
+pyyaml>=6.0
+astropy>=5.3          # FITS I/O in the SAS step
+matplotlib>=3.7       # optional quick-look plots
+threadpoolctl>=3.1
+# Not on PyPI (needed only for the real-data steps 1, 3, 10, 12):
+#   XMM-Newton SAS >= 22.1, HEASoft >= 6.33 (command-line XSPEC), relxill >= 2.3

@@ -1,0 +1,26 @@
+cff-version: 1.2.0
+message: "If you use HAMCOR, please cite the paper below and this software."
+title: "HAMCOR: Hamiltonian inference of X-ray coronal geometry from reverberation lags"
+version: 2.0.0
+date-released: 2026-11-14
+license: MIT
+repository-code: "https://github.com/fbuffoli95/HAMCOR"
+authors:
+  - family-names: Buffoli
+    given-names: Fabio
+    affiliation: "Università degli Studi di Brescia"
+    orcid: "https://orcid.org/0009-0002-6524-2388"
+keywords: [X-ray astronomy, reverberation mapping, AGN, black holes, ray tracing, Kerr spacetime]
+preferred-citation:
+  type: article
+  title: "HAMCOR: inferring X-ray coronal geometry from reverberation lags with a Hamiltonian formulation and exact photon transfer in Schwarzschild and Kerr spacetimes"
+  authors:
+    - family-names: Buffoli
+      given-names: Fabio
+      orcid: "https://orcid.org/0009-0002-6524-2388"
+  year: 2026
+  journal: "arXiv e-prints"
+  identifiers:
+    - type: other
+      value: "arXiv:2607.11805"
+  url: "https://arxiv.org/abs/2607.11805"
